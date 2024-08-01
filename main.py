@@ -67,8 +67,10 @@ async def list_items(skip: int = 0, limit: int = 10):
 async def put():
     async def get_item(item_id: str, q: Optional[str] = None, short: bool = False):
         item = {"item_id": item_id}
+
         if q:
             item.update({"q": q})
+
         if not short:
             item.update(
                 {
@@ -81,8 +83,10 @@ async def put():
 @app.get("user/{user_id}/items/{item_id}")
 async def get_user_item(user_id: int, item_id: str, q: str | None = None, short: bool = False):
     item = {"item_id": item_id, "owner_id": user_id}
+
     if q:
         item.update({"q": q})
+
     if not short:
         item.update(
             {
@@ -102,6 +106,7 @@ class Item(BaseModel):
 @app.post("/items")
 async def create_item(item: Item):
     item_dict = item.dict()
+
     if item.tax:
         price_with_tax = item.price + item.tax
         item_dict.update({"price_with_tax": price_with_tax})
@@ -111,6 +116,7 @@ async def create_item(item: Item):
 @app.put("/items/{item_id}")
 async def create_item_with_put(item_id: int, item: Item, q: str | None = None):
     result = {"item_id": item_id, **item.dict()}
+
     if q:
         result.update({"q": q})
     return result
@@ -129,6 +135,7 @@ async def read_items(
                 )
 ):
     result = {"items": [{"items_id": "Foo"}, {"items_id": "Bar"}]}
+
     if q:
         result.update({"q": q})
     return result
@@ -148,7 +155,8 @@ async def read_items_validation(
         q: str,
         size: float = Query(..., gt=0, lt=7.75)
 ):
-    result = {"item_id": item_id, "size": sizef}
+    result = {"item_id": item_id, "size": size}
+
     if q:
         result.update({"q": q})
     return result
