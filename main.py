@@ -113,3 +113,11 @@ async def create_item_with_put(item_id: int, item: Item, q: str | None = None):
     if q:
         result.update({"q": q})
     return result
+
+
+@app.get("/items")
+async def read_items(q: str | None = None):
+    result = {"items": [{"items_id": "Foo"}, {"items_id": "Bar"}]}
+    if q:
+        result.update({"q": q})
+    return result
