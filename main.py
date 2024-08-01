@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel
-from fastapi import FastAPI
+
+from fastapi import FastAPI, Query, Path
 
 app = FastAPI()
 
@@ -116,8 +117,38 @@ async def create_item_with_put(item_id: int, item: Item, q: str | None = None):
 
 
 @app.get("/items")
-async def read_items(q: str | None = None):
+async def read_items(
+        q: str | None
+        = Query(...,
+                min_length=3,
+                max_length=10,
+                title="Sample query string",
+                description="This is a sample query string",
+                deprecated=True,
+                alias="item-query",
+                )
+):
     result = {"items": [{"items_id": "Foo"}, {"items_id": "Bar"}]}
+    if q:
+        result.update({"q": q})
+    return result
+
+
+@app.get('/items_hidden/hidden')
+async def hidden_query_route(hidden_query: str | None = Query(None, include_in_schema=False)):
+    if hidden_query:
+        return {"hidden_query": hidden_query}
+    return {"hidden_query": "Not found"}
+
+
+@app.get("/items_validation/{item_id}")
+async def read_items_validation(
+        *,  # all values afterwards are keyword arguments
+        item_id: int = Path(..., title="The ID of the item to get", gt=10, le=100),
+        q: str,
+        size: float = Query(..., gt=0, lt=7.75)
+):
+    result = {"item_id": item_id, "size": sizef}
     if q:
         result.update({"q": q})
     return result
