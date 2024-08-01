@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, Body
 
 app = FastAPI()
 
@@ -159,4 +159,48 @@ async def read_items_validation(
 
     if q:
         result.update({"q": q})
+    return result
+
+
+class User(BaseModel):
+    username: str
+    full_name: str | None = None
+
+
+class Sample(BaseModel):
+    name: str
+    description: str | None = None
+    price = float
+    tax: float | None = None
+
+
+@app.put("/items/{item_id}")
+async def update_item(
+        *,
+        item_id: int = Path(..., title="The DI of the item to get", ge=0, le=150),
+        q: str | None = None,
+        item: Sample = Body(..., embed=True),
+):
+    result = {"item_id": item_id}
+
+    if q:
+        result.update({"q": q})
+    if item:
+        result.update({"item": item})
+
+    return result
+
+
+class Name(BaseModel):
+    name: str
+    description: str | None = Field(
+        None, title="The description of the item", max_length=300
+    )
+    price: float = Field(..., gt=0, description="The price must be greater than zero.")
+    tax: float | None = None
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Name = Body(..., embed=True)):
+    result = {"item_id": item_id, "item": item}
     return result
