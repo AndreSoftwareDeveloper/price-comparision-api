@@ -170,7 +170,7 @@ class User(BaseModel):
 class Sample(BaseModel):
     name: str
     description: str | None = None
-    price = float
+    price: float = None
     tax: float | None = None
 
 
