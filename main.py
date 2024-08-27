@@ -1,25 +1,22 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 
 from item import Item
 
-app = FastAPI()
-
-
-@app.post("/")
-async def add_item(item: Item):
-    return item
+middleware = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=['*'],
+        allow_credentials=True,
+        allow_methods=['*'],
+        allow_headers=['*']
+    )
+]
+app = FastAPI(middleware=middleware)
 
 
 @app.get("/")
-async def search(name_or_category):
-    pass
-
-
-@app.put("/")
-async def update_price(name, price):
-    pass
-
-
-@app.delete("/")
-async def remove_item(name: str):
-    pass
+async def search_offers(name_or_category: str):
+    return JSONResponse(status_code=200, content={"message": name_or_category})
