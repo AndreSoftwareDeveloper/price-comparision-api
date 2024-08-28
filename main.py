@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from starlette.middleware import Middleware
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware import Middleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from item import Item
 
