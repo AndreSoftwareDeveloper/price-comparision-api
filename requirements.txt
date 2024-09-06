@@ -3,3 +3,4 @@ uvicorn[standard]
 pydantic~=2.8.2
 SQLAlchemy~=2.0.32
 databases~=0.9.0
+passlib~=1.7.4
