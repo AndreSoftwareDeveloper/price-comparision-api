@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -11,20 +11,26 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, nullable=False, autoincrement=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
+
+
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
 
 
 class UserSchema(BaseModel):
     id: int
     username: str
     email: str
-    password: str
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class Product(Base):

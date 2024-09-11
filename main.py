@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 import hashing
-from models import Product, Offer, UserSchema, User
+from models import Product, Offer, UserSchema, User, UserCreate
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
 engine = create_async_engine(DATABASE_URL, echo=True)
@@ -87,18 +87,19 @@ async def search_offers(name_or_category: str, db: AsyncSession = Depends(get_db
 
 
 @app.post("/register", response_model=UserSchema)
-async def register(user: UserSchema, db: AsyncSession = Depends(get_db)):
+async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     query = select(User).where(User.email == user.email)
     result = await db.execute(query)
     existing_user = result.scalars().first()
 
     if existing_user:
-        raise HTTPException(status_code=400, detail="This email address is already being in use.")
+        raise HTTPException(status_code=400, detail="This email address is already in use.")
 
     password_hash = hashing.hash_password(user.password)
-    new_user = User(username=user.username, email=user.email, password=password_hash)
-
+    new_user = User(username=user.username, email=user.email, password_hash=password_hash)
     db.add(new_user)
-    await db.commit()
 
-    return new_user
+    await db.commit()
+    await db.refresh(new_user)
+
+    return UserSchema.from_orm(new_user)
