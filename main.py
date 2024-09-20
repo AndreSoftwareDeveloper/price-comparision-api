@@ -8,10 +8,10 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import MetaData, select, join, cast, Numeric
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 
 import hashing
-from models import Product, Offer, UserSchema, User, UserCreate
+from models import Product, Offer, UserSchema, User, UserCreate, Base
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
 engine = create_async_engine(DATABASE_URL, echo=True)
@@ -23,11 +23,9 @@ SessionLocal = sessionmaker(
     autoflush=False,
 )
 
-Base = declarative_base()
+
 metadata = MetaData()
-
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],

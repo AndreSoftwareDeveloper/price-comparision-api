@@ -1,11 +1,11 @@
 from pydantic import BaseModel, EmailStr
 
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
 
 
-class Base(DeclarativeBase):
-    pass
+Base = declarative_base()
 
 
 class User(Base):
