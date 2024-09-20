@@ -6,9 +6,11 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+
 from sqlalchemy import MetaData, select, join, cast, Numeric
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.operators import or_
 
 import hashing
 from models import Product, Offer, UserSchema, User, UserCreate, Base
@@ -22,7 +24,6 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
 )
-
 
 metadata = MetaData()
 app = FastAPI()
@@ -107,11 +108,10 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 SECRET_KEY = "example"  # temporary
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 def create_access_token(login_data: dict):
-    expire = datetime.utcnow() + timedelta(minutes=15)  # default session duration is 15 minutes
+    expire = datetime.utcnow() + timedelta(minutes=15)  # default session duration
     login_data.update({"exp": expire})
     encoded_jwt = jwt.encode(login_data, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -119,25 +119,20 @@ def create_access_token(login_data: dict):
 
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
-    query = select(User).where(User.email == form_data.username)
+    query = select(User).where(
+        or_(User.email == form_data.username, User.username == form_data.username)
+    )
     result = await db.execute(query)
     user = result.scalars().first()
 
-    if not user:
+    if not user or not hashing.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
+            detail="Incorrect username or password"
         )
 
-    if not hashing.verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
-        )
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
+    access_token = create_access_token(login_data={
+        "sub": user.email
+    })
 
     return {"access_token": access_token, "token_type": "bearer"}
