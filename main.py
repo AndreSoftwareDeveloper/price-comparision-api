@@ -17,6 +17,8 @@ from models import Product, Offer, UserSchema, User, UserCreate, Base
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
 engine = create_async_engine(DATABASE_URL, echo=True)
+SECRET_KEY = "example"  # temporary
+ALGORITHM = "HS256"
 
 SessionLocal = sessionmaker(
     bind=engine,
@@ -106,10 +108,6 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     return UserSchema.from_orm(new_user)
 
 
-SECRET_KEY = "example"  # temporary
-ALGORITHM = "HS256"
-
-
 def create_access_token(login_data: dict):
     expire = datetime.utcnow() + timedelta(minutes=15)  # default session duration
     login_data.update({"exp": expire})
@@ -125,10 +123,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     result = await db.execute(query)
     user = result.scalars().first()
 
-    if not user or not hashing.verify_password(form_data.password, user.password_hash):
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect username or password"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not hashing.verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password"
         )
 
     access_token = create_access_token(login_data={

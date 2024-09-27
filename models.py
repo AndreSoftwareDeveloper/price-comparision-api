@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
@@ -18,9 +18,9 @@ class User(Base):
 
 
 class UserCreate(BaseModel):
-    username: str
+    username: str = Field(..., min_length=3, max_length=30)
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8)
 
 
 class UserSchema(BaseModel):
