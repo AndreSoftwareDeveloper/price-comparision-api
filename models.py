@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field
+import re
+
+from pydantic import BaseModel, EmailStr, Field, validator
 
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
@@ -18,9 +20,20 @@ class User(Base):
 
 
 class UserCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=30)
+    username: str = Field(..., max_length=20)
     email: EmailStr
     password: str = Field(..., min_length=8)
+
+    @validator('password')
+    def password_complexity(cls, password):
+        if not re.search(r'[A-Za-z]', password):
+            raise ValueError('The password must contain at least one letter.')
+        if not re.search(r'\d', password):
+            raise ValueError('The password must contain at least one digit.')
+        if not re.search(r'[@$!%*?&]', password):
+            raise ValueError('The password must contain at least one special character: @$!%*?&.')
+
+        return password
 
 
 class UserSchema(BaseModel):
