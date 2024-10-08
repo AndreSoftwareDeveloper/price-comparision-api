@@ -1,19 +1,22 @@
 from datetime import timedelta, datetime
 from decimal import Decimal
-from jose import jwt
+import json
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
+from jose import jwt
 
 from sqlalchemy import MetaData, select, join, cast, Numeric
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
 
-import hashing
 from models import Product, Offer, UserSchema, User, UserCreate, Base
+import hashing
+
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
 engine = create_async_engine(DATABASE_URL, echo=True)
@@ -140,3 +143,35 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     })
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/send_email")
+async def send_mail():
+    with open("secrets/email_credentials.json", 'r') as file:
+        credentials = json.load(file)
+
+    username = credentials.get("username")
+    password = credentials.get("password")
+    recipient = "murzyn448@gmail.com"
+
+    conf = ConnectionConfig(
+        MAIL_USERNAME=username,
+        MAIL_PASSWORD=password,
+        MAIL_FROM=username,
+        MAIL_PORT=587,
+        MAIL_SERVER="smtp.gmail.com",
+        MAIL_STARTTLS=True,
+        MAIL_SSL_TLS=False,
+        USE_CREDENTIALS=True
+    )
+
+    message = MessageSchema(
+           subject="Your account is almost ready",
+           recipients=[recipient],
+           body="Verification email",  # TODO
+           subtype="html"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+    return JSONResponse(status_code=200, content={"message": "The email has been sent"})
