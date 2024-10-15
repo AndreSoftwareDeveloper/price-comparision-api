@@ -17,6 +17,8 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    activated: bool = False
+    activation_token = Column(String)
 
 
 class UserCreate(BaseModel):
@@ -27,7 +29,7 @@ class UserCreate(BaseModel):
     @validator('password')
     def password_complexity(cls, password):
         if not re.search(r'[A-Za-z]', password):
-            raise ValueError('The password must contain at least one letter.')
+            raise ValueError('The password must contain at least one lowercase and uppercase letter.')
         if not re.search(r'\d', password):
             raise ValueError('The password must contain at least one digit.')
         if not re.search(r'[@$!%*?&]', password):

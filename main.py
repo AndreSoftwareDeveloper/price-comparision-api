@@ -1,6 +1,8 @@
 from datetime import timedelta, datetime
 from decimal import Decimal
 import json
+import random
+import string
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -92,6 +94,23 @@ async def search_offers(name_or_category: str, db: AsyncSession = Depends(get_db
     return JSONResponse(status_code=200, content={"products": products})
 
 
+async def create_activation_token(db: AsyncSession = Depends(get_db)):
+    characters = string.ascii_letters + string.digits
+
+    while True:
+        token = ''.join(
+            random.choice(characters) for _ in range(30)
+        )
+
+        result = await db.execute(
+            select(User).where(User.activation_token == token)
+        )
+
+        token_exists = bool(result.scalars().first())
+        if token_exists is False:
+            return token
+
+
 @app.post("/register", response_model=UserSchema)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     query = select(User).where(User.email == user.email)
@@ -102,7 +121,9 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="This email address is already in use.")
 
     password_hash = hashing.hash_password(user.password)
-    new_user = User(username=user.username, email=user.email, password_hash=password_hash)
+    activation_token = await create_activation_token(db)
+    new_user = User(username=user.username, email=user.email, password_hash=password_hash,
+                    activation_token=activation_token)
     db.add(new_user)
 
     await db.commit()
@@ -125,8 +146,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     )
     result = await db.execute(query)
     user = result.scalars().first()
-
-    if not user:
+    print(user.activated)
+    if not user or user.activated is False:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
