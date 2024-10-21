@@ -193,8 +193,8 @@ async def send_mail():
                     <body>
                            <p>Your account is almost ready!</p>
                            <p>Press the link below to confirm Your e-mail address:</p>
-                           <a href="https://www.google.com">Confirm your email</a>
-                           <br><br>
+                           <a href="https://www.google.com">Confirm your email</a><br>
+                           <p>This link is valid for 24 hours.</p><br>
                            <p>If you believe this message was sent to you in error, please ignore it.</p>
                     </body>
                 </html>
@@ -205,3 +205,15 @@ async def send_mail():
     fm = FastMail(conf)
     await fm.send_message(message)
     return JSONResponse(status_code=200, content={"message": "The email has been sent"})
+
+
+@app.post("/check_token")
+async def check_token(activation_token: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(User).where(User.activation_token == activation_token)
+    )
+    found_user = result.scalars().first()
+
+    if found_user is not None:
+        return JSONResponse(status_code=200, content={"message": str(found_user)})
+    return JSONResponse(status_code=404, content={"message": "The activation link is invalid or has expired."})
