@@ -19,7 +19,6 @@ from sqlalchemy.sql.operators import or_
 from models import Product, Offer, UserSchema, User, UserCreate, Base
 import hashing
 
-
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
 engine = create_async_engine(DATABASE_URL, echo=True)
 SECRET_KEY = "example"  # temporary
@@ -187,10 +186,20 @@ async def send_mail():
     )
 
     message = MessageSchema(
-           subject="Your account is almost ready",
-           recipients=[recipient],
-           body="Verification email",  # TODO
-           subtype="html"
+        subject="Your account is almost ready",
+        recipients=[recipient],
+        body="""
+                <html>
+                    <body>
+                           <p>Your account is almost ready!</p>
+                           <p>Press the link below to confirm Your e-mail address:</p>
+                           <a href="https://www.google.com">Confirm your email</a>
+                           <br><br>
+                           <p>If you believe this message was sent to you in error, please ignore it.</p>
+                    </body>
+                </html>
+            """,
+        subtype="html"
     )
 
     fm = FastMail(conf)
