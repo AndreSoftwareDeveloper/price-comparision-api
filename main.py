@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
 from jose import jwt
 
-from sqlalchemy import MetaData, select, join, cast, Numeric
+from sqlalchemy import MetaData, select, join, cast, Numeric, false, update, true
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
@@ -210,10 +210,16 @@ async def send_mail():
 @app.post("/check_token")
 async def check_token(activation_token: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(User).where(User.activation_token == activation_token)
+        select(User).where(
+            User.activation_token == activation_token,
+            User.activated is False
+        )
     )
-    found_user = result.scalars().first()
+    user = result.scalars().first()
 
-    if found_user is not None:
-        return JSONResponse(status_code=200, content={"message": str(found_user)})
+    if user is not None:
+        user.activated = True
+        await db.commit()
+        await db.refresh(user)
+        return JSONResponse(status_code=200, content={"message": str(user)})
     return JSONResponse(status_code=404, content={"message": "The activation link is invalid or has expired."})

@@ -2,7 +2,7 @@ import re
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -17,7 +17,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
-    activated: bool = False
+    activated = Column(Boolean)
     activation_token = Column(String)
 
 
