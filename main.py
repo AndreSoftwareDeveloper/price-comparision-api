@@ -112,12 +112,19 @@ async def create_verification_token(db: AsyncSession = Depends(get_db)):
 
 @app.post("/register", response_model=UserSchema)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    query = select(User).where(User.email == user.email)
-    result = await db.execute(query)
-    existing_user = result.scalars().first()
+    query_email = select(User).where(User.email == user.email)
+    query_username = select(User).where(User.username == user.username)
 
-    if existing_user:
+    result_email = await db.execute(query_email)
+    result_username = await db.execute(query_username)
+
+    existing_email = result_email.scalars().first()
+    existing_username = result_username.scalars().first()
+
+    if existing_email:
         raise HTTPException(status_code=400, detail="This email address is already in use.")
+    if existing_username:
+        raise HTTPException(status_code=400, detail="This username address is already in use.")
 
     password_hash = hashing.hash_password(user.password)
     verification_token = await create_verification_token(db)
@@ -127,7 +134,7 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
     await db.commit()
     await db.refresh(new_user)
-    await send_email(user.email)
+    await send_email(user.email, verification_token)
 
     return UserSchema.from_orm(new_user)
 
