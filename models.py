@@ -18,7 +18,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
     activated = Column(Boolean, default=False)
-    activation_token = Column(String)
+    verification_token = Column(String)
 
 
 class UserCreate(BaseModel):

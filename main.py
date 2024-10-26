@@ -93,7 +93,7 @@ async def search_offers(name_or_category: str, db: AsyncSession = Depends(get_db
     return JSONResponse(status_code=200, content={"products": products})
 
 
-async def create_activation_token(db: AsyncSession = Depends(get_db)):
+async def create_verification_token(db: AsyncSession = Depends(get_db)):
     characters = string.ascii_letters + string.digits
 
     while True:
@@ -102,7 +102,7 @@ async def create_activation_token(db: AsyncSession = Depends(get_db)):
         )
 
         result = await db.execute(
-            select(User).where(User.activation_token == token)
+            select(User).where(User.verification_token == token)
         )
 
         token_exists = bool(result.scalars().first())
@@ -120,9 +120,9 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="This email address is already in use.")
 
     password_hash = hashing.hash_password(user.password)
-    activation_token = await create_activation_token(db)
+    verification_token = await create_verification_token(db)
     new_user = User(username=user.username, email=user.email, password_hash=password_hash,
-                    activation_token=activation_token)
+                    verification_token=verification_token)
     db.add(new_user)
 
     await db.commit()
@@ -167,7 +167,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
 
 @app.post("/send_email")
-async def send_email(recipient: str):
+async def send_email(recipient: str, verification_token: str):
     with open("secrets/email_credentials.json", 'r') as file:
         credentials = json.load(file)
 
@@ -188,12 +188,12 @@ async def send_email(recipient: str):
     message = MessageSchema(
         subject="Your account is almost ready",
         recipients=[recipient],
-        body="""
+        body=f"""
                 <html>
                     <body>
                            <p>Your account is almost ready!</p>
                            <p>Press the link below to confirm Your e-mail address:</p>
-                           <a href="https://www.google.com">Confirm your email</a><br>
+                           <a href="http://127.0.0.1:8000/verify_account?verification_token={verification_token}">Confirm your email</a><br>
                            <p>This link is valid for 24 hours.</p><br>
                            <p>If you believe this message was sent to you in error, please ignore it.</p>
                     </body>
@@ -207,11 +207,11 @@ async def send_email(recipient: str):
     return JSONResponse(status_code=200, content={"message": "The email has been sent"})
 
 
-@app.post("/check_token")
-async def check_token(activation_token: str, db: AsyncSession = Depends(get_db)):
+@app.post("/verify_account")
+async def verify_account(verification_token: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(User).where(
-            User.activation_token == activation_token,
+            User.verification_token == verification_token,
             User.activated == False  # do not change to "User.activated is False", will cause error
         )
     )
