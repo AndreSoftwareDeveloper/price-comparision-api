@@ -127,6 +127,7 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
     await db.commit()
     await db.refresh(new_user)
+    await send_email(user.email)
 
     return UserSchema.from_orm(new_user)
 
@@ -145,7 +146,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     )
     result = await db.execute(query)
     user = result.scalars().first()
-    print(user.activated)
+
     if not user or user.activated is False:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -166,13 +167,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
 
 @app.post("/send_email")
-async def send_mail():
+async def send_email(recipient: str):
     with open("secrets/email_credentials.json", 'r') as file:
         credentials = json.load(file)
 
     username = credentials.get("username")
     password = credentials.get("password")
-    recipient = "murzyn448@gmail.com"
 
     conf = ConnectionConfig(
         MAIL_USERNAME=username,
@@ -212,7 +212,7 @@ async def check_token(activation_token: str, db: AsyncSession = Depends(get_db))
     result = await db.execute(
         select(User).where(
             User.activation_token == activation_token,
-            User.activated is False
+            User.activated == False  # do not change to "User.activated is False", will cause error
         )
     )
     user = result.scalars().first()
@@ -222,4 +222,5 @@ async def check_token(activation_token: str, db: AsyncSession = Depends(get_db))
         await db.commit()
         await db.refresh(user)
         return JSONResponse(status_code=200, content={"message": str(user)})
+
     return JSONResponse(status_code=404, content={"message": "The activation link is invalid or has expired."})
