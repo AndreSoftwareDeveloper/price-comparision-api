@@ -24,10 +24,12 @@ class User(Base):
 class UserCreate(BaseModel):
     username: str = Field(..., max_length=20)
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    password: str = Field(...)
 
     @validator('password')
-    def password_complexity(cls, password):
+    def password_complexity(cls, password: str):
+        if len(password) < 8:
+            raise ValueError('The password must contain at least 8 characters.')
         if not re.search(r'[A-Za-z]', password):
             raise ValueError('The password must contain at least one lowercase and uppercase letter.')
         if not re.search(r'\d', password):

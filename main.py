@@ -130,8 +130,8 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     verification_token = await create_verification_token(db)
     new_user = User(username=user.username, email=user.email, password_hash=password_hash,
                     verification_token=verification_token)
-    db.add(new_user)
 
+    db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
     await send_email(user.email, verification_token)
