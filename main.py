@@ -200,7 +200,7 @@ async def send_email(recipient: str, verification_token: str):
                     <body>
                            <p>Your account is almost ready!</p>
                            <p>Press the link below to confirm Your e-mail address:</p>
-                           <a href="http://127.0.0.1:8000/verify_account?verification_token={verification_token}">
+                           <a href="http://localhost:4200/account-activation?verification_token={verification_token}">
                                 Confirm your email</a>
                            <p>This link is valid for 24 hours.</p>
                            <p>If you believe this message was sent to you in error, please ignore it.</p>
