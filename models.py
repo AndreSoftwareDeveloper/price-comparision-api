@@ -66,6 +66,6 @@ class Offer(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey('products.id'))
     shop = Column(String, index=True)
-    price = Column(Numeric(precision=10, scale=2))
+    price = Column(Numeric(precision=10, scale=2))  # threw an InvalidRequestError: Unknown PG numeric type: 790 when was of a money type in PostgreSQL database
 
     product = relationship("Product", back_populates="offers")

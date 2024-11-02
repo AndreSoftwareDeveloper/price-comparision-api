@@ -1,3 +1,4 @@
+import decimal
 from datetime import timedelta, datetime
 from decimal import Decimal
 import json
@@ -65,6 +66,7 @@ async def get_db():
 async def search_offers(name_or_category: str, db: AsyncSession = Depends(get_db)):
     query = (
         select(
+            Offer.id,
             Product.category,
             Product.name,
             Offer.shop,
@@ -83,12 +85,13 @@ async def search_offers(name_or_category: str, db: AsyncSession = Depends(get_db
     rows = result.fetchall()
     products = [
         {
-            "category": r[0],
-            "name": r[1],
-            "shop": r[2],
-            "price": float(r[3]) if isinstance(r[3], Decimal) else r[3]
+            "id": row[0],
+            "category": row[1],
+            "name": row[2],
+            "shop": row[3],
+            "price": float(row[4]) if isinstance(row[4], Decimal) else row[4]
         }
-        for r in rows
+        for row in rows
     ]
     return JSONResponse(status_code=200, content={"products": products})
 
@@ -232,3 +235,22 @@ async def verify_account(verification_token: str, db: AsyncSession = Depends(get
         return JSONResponse(status_code=200, content={"message": str(user)})
 
     return JSONResponse(status_code=404, content={"message": "The activation link is invalid or has expired."})
+
+
+@app.patch("/")
+async def update_price(offer_id: int, new_price: float, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Offer).where(Offer.id == offer_id)
+    )
+    offer = result.scalars().first()
+
+    if offer is not None:
+        offer.price = Decimal(new_price)  # I'm not sure if it's necessary
+        await db.commit()
+        await db.refresh(offer)
+        return JSONResponse(status_code=200, content={
+            "message": "Price has been updated successfully."
+        })
+    return JSONResponse(status_code=404, content={
+        "message": "Offer not found."
+    })
