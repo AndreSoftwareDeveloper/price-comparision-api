@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
 
-from models import Product, Offer, UserSchema, User, UserCreate, Base
+from models import Product, Offer, UserSchema, User, UserCreate, Base, PriceUpdateData
 import hashing
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
@@ -223,7 +223,7 @@ async def verify_account(verification_token: str, db: AsyncSession = Depends(get
     result = await db.execute(
         select(User).where(
             User.verification_token == verification_token,
-            User.activated == False  # do not change to "User.activated is False", will cause error
+            User.activated == False  # do not change to "User.activated is False", will cause an error
         )
     )
     user = result.scalars().first()
@@ -234,11 +234,16 @@ async def verify_account(verification_token: str, db: AsyncSession = Depends(get
         await db.refresh(user)
         return JSONResponse(status_code=200, content={"message": str(user)})
 
-    return JSONResponse(status_code=404, content={"message": "The activation link is invalid or has expired."})
+    return JSONResponse(status_code=404, content={
+        "message": "The activation link is invalid or has expired."
+    })
 
 
 @app.patch("/")
-async def update_price(offer_id: int, new_price: float, db: AsyncSession = Depends(get_db)):
+async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(get_db)):
+    offer_id = update_data.id
+    new_price = update_data.new_price
+
     result = await db.execute(
         select(Offer).where(Offer.id == offer_id)
     )
@@ -251,6 +256,7 @@ async def update_price(offer_id: int, new_price: float, db: AsyncSession = Depen
         return JSONResponse(status_code=200, content={
             "message": "Price has been updated successfully."
         })
+
     return JSONResponse(status_code=404, content={
         "message": "Offer not found."
     })

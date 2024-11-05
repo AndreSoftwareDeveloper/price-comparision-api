@@ -2,10 +2,9 @@ import re
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Boolean, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-
 
 Base = declarative_base()
 
@@ -66,6 +65,12 @@ class Offer(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey('products.id'))
     shop = Column(String, index=True)
-    price = Column(Numeric(precision=10, scale=2))  # threw an InvalidRequestError: Unknown PG numeric type: 790 when was of a money type in PostgreSQL database
+    price = Column(Numeric(precision=10,
+                           scale=2))  # threw an InvalidRequestError: Unknown PG numeric type: 790 when was of a money type in PostgreSQL database
 
     product = relationship("Product", back_populates="offers")
+
+
+class PriceUpdateData(BaseModel):
+    id: int
+    new_price: float
