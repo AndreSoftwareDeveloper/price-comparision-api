@@ -2,7 +2,7 @@ import re
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Boolean, Float
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Boolean, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -55,6 +55,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     category = Column(String, index=True)
     name = Column(String, index=True)
+    image = Column(LargeBinary)
 
     offers = relationship("Offer", back_populates="product")
 

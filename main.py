@@ -5,7 +5,7 @@ import json
 import random
 import string
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -254,9 +254,24 @@ async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(
         await db.commit()
         await db.refresh(offer)
         return JSONResponse(status_code=200, content={
-            "message": "Price has been updated successfully."
+            "message": "The price has been updated successfully!"
         })
 
     return JSONResponse(status_code=404, content={
         "message": "Offer not found."
+    })
+
+
+@app.patch("/upload")
+async def upload(product_id: int, image: UploadFile, db: AsyncSession = Depends(get_db)):
+    image_bytes = await image.read()
+    result = await db.execute(
+        select(Product).where(Product.id == product_id)
+    )
+    product = result.scalars().first()
+    product.image = image_bytes
+    await db.commit()
+    await db.refresh(product)
+    return JSONResponse(status_code=200, content={
+        "message": "success!"
     })
