@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
@@ -58,6 +59,25 @@ class Offer(Base):
     # PostgreSQL database is of a money type
     name = Column(String, index=True)
     image = Column(LargeBinary)
+
+
+class OfferCreate(BaseModel):
+    shop: str = Field(...)
+    price: float = Field(...)
+    name: str = Field(...)
+    image: Optional[bytes] = None
+
+
+class OfferSchema(BaseModel):
+    id: int
+    shop: str
+    price: float
+    name: str
+    image: bytes
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 
 class PriceUpdateData(BaseModel):

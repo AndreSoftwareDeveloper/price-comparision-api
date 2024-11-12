@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
 
-from models import Offer, UserSchema, User, UserCreate, Base, PriceUpdateData
+from models import Offer, UserSchema, User, UserCreate, Base, PriceUpdateData, OfferCreate, OfferSchema
 import hashing
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
@@ -99,9 +99,9 @@ async def create_verification_token(db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/register", response_model=UserSchema)
-async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    query_email = select(User).where(User.email == user.email)
-    query_username = select(User).where(User.username == user.username)
+async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+    query_email = select(User).where(User.email == user_data.email)
+    query_username = select(User).where(User.username == user_data.username)
 
     result_email = await db.execute(query_email)
     result_username = await db.execute(query_username)
@@ -114,17 +114,17 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     if existing_username:
         raise HTTPException(status_code=400, detail="This username address is already in use.")
 
-    password_hash = hashing.hash_password(user.password)
+    password_hash = hashing.hash_password(user_data.password)
     verification_token = await create_verification_token(db)
-    new_user = User(username=user.username, email=user.email, password_hash=password_hash,
-                    verification_token=verification_token)
+    user = User(username=user_data.username, email=user_data.email, password_hash=password_hash,
+                verification_token=verification_token)
 
-    db.add(new_user)
+    db.add(user)  # TODO error handling in try-except
     await db.commit()
-    await db.refresh(new_user)
-    await send_email(user.email, verification_token)
+    await db.refresh(user)
+    await send_email(user_data.email, verification_token)
 
-    return UserSchema.from_orm(new_user)
+    return UserSchema.from_orm(user)
 
 
 def create_access_token(login_data: dict):
@@ -266,3 +266,16 @@ async def upload(offer_id: int, image: UploadFile, db: AsyncSession = Depends(ge
     return JSONResponse(status_code=404, content={
         "message": "Offer with provided ID doesn't exist!"
     })
+
+
+@app.post("/create_offer")
+async def create_offer(offer_data: OfferCreate, db: AsyncSession = Depends(get_db)):
+    offer = Offer(shop=offer_data.shop, price=offer_data.price, name=offer_data.name, image=offer_data.image)
+
+    try:
+        db.add(offer)
+        await db.commit()
+        await db.refresh(offer)
+        return OfferSchema.from_orm(offer)
+    except Exception:
+        raise HTTPException(status_code=400, detail="An error occurred!")
