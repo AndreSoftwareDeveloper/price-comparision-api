@@ -16,8 +16,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
 
-from models import Offer, UserSchema, User, UserCreate, Base, PriceUpdateData, OfferCreate, OfferSchema
 import hashing
+from models.offer import Offer, OfferCreate, OfferSchema, PriceUpdateData
+from models.user import Base, User, UserCreate, UserSchema
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
 engine = create_async_engine(DATABASE_URL, echo=True)
