@@ -277,5 +277,8 @@ async def create_offer(offer_data: OfferCreate, db: AsyncSession = Depends(get_d
         await db.commit()
         await db.refresh(offer)
         return OfferSchema.from_orm(offer)
-    except Exception:
-        raise HTTPException(status_code=400, detail="An error occurred!")
+    except Exception as ex:
+        raise HTTPException(
+            status_code=400,
+            detail=f"An error occurred: {str(ex)}"
+        )

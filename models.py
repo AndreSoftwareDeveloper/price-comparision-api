@@ -73,7 +73,7 @@ class OfferSchema(BaseModel):
     shop: str
     price: float
     name: str
-    image: bytes
+    image: Optional[bytes] = None
 
     class Config:
         orm_mode = True
