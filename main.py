@@ -64,14 +64,17 @@ async def get_db():
 @app.get("/")
 async def search_offers(name: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Offer.shop, Offer.price, Offer.name).where(Offer.name.ilike(f"%{name}%"))
+        select(
+            Offer.id, Offer.shop, Offer.price, Offer.name
+        ).where(Offer.name.ilike(f"%{name}%"))
     )
     rows = result.fetchall()
     products = [
         {
-            "shop": row[0],
-            "price": float(row[1]) if isinstance(row[1], Decimal) else row[1],
-            "name": row[2],
+            "id": row[0],
+            "shop": row[1],
+            "price": float(row[2]) if isinstance(row[2], Decimal) else row[2],
+            "name": row[3]
         }
         for row in rows
     ]
