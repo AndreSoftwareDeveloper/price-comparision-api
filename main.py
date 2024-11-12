@@ -1,23 +1,22 @@
-import decimal
 from datetime import timedelta, datetime
 from decimal import Decimal
 import json
 import random
 import string
 
-from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, status, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
 from jose import jwt
 
-from sqlalchemy import MetaData, select, join, cast, Numeric, false, update, true
+from sqlalchemy import MetaData, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
 
-from models import Product, Offer, UserSchema, User, UserCreate, Base, PriceUpdateData
+from models import Offer, UserSchema, User, UserCreate, Base, PriceUpdateData
 import hashing
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
@@ -63,33 +62,16 @@ async def get_db():
 
 
 @app.get("/")
-async def search_offers(name_or_category: str, db: AsyncSession = Depends(get_db)):
-    query = (
-        select(
-            Offer.id,
-            Product.category,
-            Product.name,
-            Offer.shop,
-            cast(Offer.price, Numeric(10, 2))
-        )
-        .select_from(
-            join(Product, Offer, Product.id == Offer.product_id)
-        )
-        .where(
-            (Product.name.ilike(f"%{name_or_category}%")) |
-            (Product.category.ilike(f"%{name_or_category}%"))
-        )
+async def search_offers(name: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Offer.shop, Offer.price, Offer.name).where(Offer.name.ilike(f"%{name}%"))
     )
-
-    result = await db.execute(query)
     rows = result.fetchall()
     products = [
         {
-            "id": row[0],
-            "category": row[1],
+            "shop": row[0],
+            "price": float(row[1]) if isinstance(row[1], Decimal) else row[1],
             "name": row[2],
-            "shop": row[3],
-            "price": float(row[4]) if isinstance(row[4], Decimal) else row[4]
         }
         for row in rows
     ]
