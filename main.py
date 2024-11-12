@@ -248,15 +248,21 @@ async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(
 
 
 @app.patch("/upload")
-async def upload(product_id: int, image: UploadFile, db: AsyncSession = Depends(get_db)):
+async def upload(offer_id: int, image: UploadFile, db: AsyncSession = Depends(get_db)):
     image_bytes = await image.read()
     result = await db.execute(
-        select(Product).where(Product.id == product_id)
+        select(Offer).where(Offer.id == offer_id)
     )
-    product = result.scalars().first()
-    product.image = image_bytes
-    await db.commit()
-    await db.refresh(product)
-    return JSONResponse(status_code=200, content={
-        "message": "success!"
+    offer = result.scalars().first()
+
+    if offer is not None:
+        offer.image = image_bytes
+        await db.commit()
+        await db.refresh(offer)
+        return JSONResponse(status_code=200, content={
+            "message": "Success!"
+        })
+
+    return JSONResponse(status_code=404, content={
+        "message": "Offer with provided ID doesn't exist!"
     })
