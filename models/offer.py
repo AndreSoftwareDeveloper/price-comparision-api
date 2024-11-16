@@ -1,5 +1,6 @@
 from typing import Optional
 
+from fastapi import UploadFile
 from pydantic import BaseModel, Field
 
 from sqlalchemy import Column, Integer, String, Numeric, LargeBinary
@@ -24,7 +25,7 @@ class OfferCreate(BaseModel):
     shop: str = Field(...)
     price: float = Field(...)
     name: str = Field(...)
-    image: Optional[bytes] = None
+    image: UploadFile
 
 
 class OfferSchema(BaseModel):

@@ -1,3 +1,4 @@
+import base64
 from datetime import timedelta, datetime
 from decimal import Decimal
 import json
@@ -66,7 +67,7 @@ async def get_db():
 async def search_offers(name: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(
-            Offer.id, Offer.shop, Offer.price, Offer.name
+            Offer.id, Offer.shop, Offer.price, Offer.name, Offer.image
         ).where(Offer.name.ilike(f"%{name}%"))
     )
     rows = result.fetchall()
@@ -75,7 +76,8 @@ async def search_offers(name: str, db: AsyncSession = Depends(get_db)):
             "id": row[0],
             "shop": row[1],
             "price": float(row[2]) if isinstance(row[2], Decimal) else row[2],
-            "name": row[3]
+            "name": row[3],
+            "image": base64.b64encode(row[4]).decode("utf-8") if row[4] else None
         }
         for row in rows
     ]
@@ -248,36 +250,23 @@ async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(
     })
 
 
-@app.patch("/upload")
-async def upload(offer_id: int, image: UploadFile, db: AsyncSession = Depends(get_db)):
+@app.post("/add_offer")
+async def add_offer(
+        shop: str,
+        price: float,
+        name: str,
+        image: UploadFile,
+        db: AsyncSession = Depends(get_db)
+):
+    offer = Offer(shop=shop, price=price, name=name, image=None)
     image_bytes = await image.read()
-    result = await db.execute(
-        select(Offer).where(Offer.id == offer_id)
-    )
-    offer = result.scalars().first()
-
-    if offer is not None:
-        offer.image = image_bytes
-        await db.commit()
-        await db.refresh(offer)
-        return JSONResponse(status_code=200, content={
-            "message": "Success!"
-        })
-
-    return JSONResponse(status_code=404, content={
-        "message": "Offer with provided ID doesn't exist!"
-    })
-
-
-@app.post("/create_offer")
-async def create_offer(offer_data: OfferCreate, db: AsyncSession = Depends(get_db)):
-    offer = Offer(shop=offer_data.shop, price=offer_data.price, name=offer_data.name, image=offer_data.image)
+    offer.image = image_bytes
 
     try:
         db.add(offer)
         await db.commit()
         await db.refresh(offer)
-        return OfferSchema.from_orm(offer)
+        return JSONResponse(status_code=201, content={"message": "jest git"})
     except Exception as ex:
         raise HTTPException(
             status_code=400,
