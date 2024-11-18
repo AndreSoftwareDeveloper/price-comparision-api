@@ -5,12 +5,13 @@ import json
 import random
 import string
 
-from fastapi import FastAPI, HTTPException, Depends, status, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
 from jose import jwt
+from pydantic import BaseModel
 
 from sqlalchemy import MetaData, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -18,7 +19,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.operators import or_
 
 import hashing
-from models.offer import Offer, OfferCreate, OfferSchema, PriceUpdateData
+from models.offer import Offer, PriceUpdateData
 from models.user import Base, User, UserCreate, UserSchema
 
 DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost/PriceComparision"
@@ -252,21 +253,22 @@ async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(
 
 @app.post("/add_offer")
 async def add_offer(
-        shop: str,
-        price: float,
-        name: str,
-        image: UploadFile,
-        db: AsyncSession = Depends(get_db)
+    shop: str = Form(...),
+    price: float = Form(...),
+    name: str = Form(...),
+    image: UploadFile | None = None,
+    db: AsyncSession = Depends(get_db)
 ):
     offer = Offer(shop=shop, price=price, name=name, image=None)
-    image_bytes = await image.read()
-    offer.image = image_bytes
+    if image:
+        image_bytes = await image.read()
+        offer.image = image_bytes
 
     try:
         db.add(offer)
         await db.commit()
         await db.refresh(offer)
-        return JSONResponse(status_code=201, content={"message": "jest git"})
+        return JSONResponse(status_code=201, content={"message": "jest git"})  # TODO decent message
     except Exception as ex:
         raise HTTPException(
             status_code=400,
