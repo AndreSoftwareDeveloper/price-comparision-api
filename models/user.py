@@ -1,9 +1,8 @@
 import re
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, validator
 
-from sqlalchemy import Column, Integer, String, Numeric, Boolean, LargeBinary
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
