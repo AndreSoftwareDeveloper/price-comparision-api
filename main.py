@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
 from jose import jwt
-from pydantic import BaseModel
 
 from sqlalchemy import MetaData, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -120,8 +119,11 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
     password_hash = hashing.hash_password(user_data.password)
     verification_token = await create_verification_token(db)
-    user = User(username=user_data.username, email=user_data.email, password_hash=password_hash,
-                verification_token=verification_token)
+    user = User(username=user_data.username,
+                email=user_data.email,
+                password_hash=password_hash,
+                verification_token=verification_token
+    )
 
     db.add(user)  # TODO error handling in try-except
     await db.commit()
@@ -141,7 +143,10 @@ def create_access_token(login_data: dict):
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     query = select(User).where(
-        or_(User.email == form_data.username, User.username == form_data.username)
+        or_(
+            User.email == form_data.username,
+            User.username == form_data.username
+        )
     )
     result = await db.execute(query)
     user = result.scalars().first()
