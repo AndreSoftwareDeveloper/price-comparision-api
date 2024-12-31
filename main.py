@@ -5,12 +5,13 @@ import json
 import random
 import string
 
+from jose import jwt
+
 from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
-from jose import jwt
 
 from sqlalchemy import MetaData, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -81,7 +82,10 @@ async def search_offers(name: str, db: AsyncSession = Depends(get_db)):
         }
         for row in rows
     ]
-    return JSONResponse(status_code=200, content={"products": products})
+    return JSONResponse(
+        status_code=200,
+        content={"products": products}
+    )
 
 
 async def create_verification_token(db: AsyncSession = Depends(get_db)):
@@ -123,7 +127,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
                 email=user_data.email,
                 password_hash=password_hash,
                 verification_token=verification_token
-    )
+                )
 
     db.add(user)  # TODO error handling in try-except
     await db.commit()
@@ -163,11 +167,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
             detail="Incorrect password"
         )
 
-    access_token = create_access_token(login_data={
-        "sub": user.email
-    })
+    access_token = create_access_token(
+        login_data={
+            "sub": user.email
+        }
+    )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 @app.post("/send_email")
@@ -195,12 +204,13 @@ async def send_email(recipient: str, verification_token: str):
         body=f"""
                 <html>
                     <body>
-                           <p>Your account is almost ready!</p>
-                           <p>Press the link below to confirm Your e-mail address:</p>
-                           <a href="http://localhost:4200/account-activation?verification_token={verification_token}">
-                                Confirm your email</a>
-                           <p>This link is valid for 24 hours.</p>
-                           <p>If you believe this message was sent to you in error, please ignore it.</p>
+                        <p>Your account is almost ready!</p>
+                        <p>Press the link below to confirm Your e-mail address:</p>
+                        <a href="http://localhost:4200/account-activation?verification_token={verification_token}">
+                            Confirm your email
+                        </a>
+                        <p>This link is valid for 24 hours.</p>
+                        <p>If you believe this message was sent to you in error, please ignore it.</p>
                     </body>
                 </html>
             """,
@@ -209,7 +219,10 @@ async def send_email(recipient: str, verification_token: str):
 
     fm = FastMail(conf)
     await fm.send_message(message)
-    return JSONResponse(status_code=200, content={"message": "The email has been sent"})
+    return JSONResponse(
+        status_code=200,
+        content={"message": "The email has been sent"}
+    )
 
 
 @app.post("/verify_account")
@@ -226,11 +239,14 @@ async def verify_account(verification_token: str, db: AsyncSession = Depends(get
         user.activated = True
         await db.commit()
         await db.refresh(user)
-        return JSONResponse(status_code=200, content={"message": str(user)})
+        return JSONResponse(
+            status_code=200,
+            content={"message": str(user)})
 
-    return JSONResponse(status_code=404, content={
-        "message": "The activation link is invalid or has expired."
-    })
+    return JSONResponse(
+        status_code=404,
+        content={"message": "The activation link is invalid or has expired."}
+    )
 
 
 @app.patch("/")
@@ -247,22 +263,25 @@ async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(
         offer.price = Decimal(new_price)  # I'm not sure if it's necessary
         await db.commit()
         await db.refresh(offer)
-        return JSONResponse(status_code=200, content={
-            "message": "The price has been updated successfully!"
-        })
 
-    return JSONResponse(status_code=404, content={
-        "message": "Offer not found."
-    })
+        return JSONResponse(
+            status_code=200,
+            content={"message": "The price has been updated successfully!"}
+        )
+
+    return JSONResponse(
+        status_code=404,
+        content={"message": "Offer not found."}
+    )
 
 
 @app.post("/add_offer")
 async def add_offer(
-    shop: str = Form(...),
-    price: float = Form(...),
-    name: str = Form(...),
-    image: UploadFile | None = None,
-    db: AsyncSession = Depends(get_db)
+        shop: str = Form(...),  # TODO add description, tile etc. to the Form() invocations
+        price: float = Form(...),
+        name: str = Form(...),
+        image: UploadFile | None = None,
+        db: AsyncSession = Depends(get_db)
 ):
     offer = Offer(shop=shop, price=price, name=name, image=None)
     if image:
@@ -273,7 +292,10 @@ async def add_offer(
         db.add(offer)
         await db.commit()
         await db.refresh(offer)
-        return JSONResponse(status_code=201, content={"message": "jest git"})  # TODO decent message
+        return JSONResponse(
+            status_code=201,
+            content={"message": "jest git"}  # TODO decent message
+        )
     except Exception as ex:
         raise HTTPException(
             status_code=400,

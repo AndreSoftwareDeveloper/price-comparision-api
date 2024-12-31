@@ -14,9 +14,10 @@ class Offer(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     shop = Column(String, index=True)
-    price = Column(Numeric(precision=10,
-                           scale=2))  # throw an InvalidRequestError: Unknown PG numeric type: 790 when column in
-    # PostgreSQL database is of a money type
+    price = Column(
+        Numeric(precision=10, scale=2)
+    )  # throws an InvalidRequestError: Unknown PG numeric type: 790 when column in the PostgreSQL database
+    # is of a money type
     name = Column(String, index=True)
     image = Column(LargeBinary)
 
