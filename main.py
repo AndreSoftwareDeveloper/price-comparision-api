@@ -277,7 +277,7 @@ async def update_price(update_data: PriceUpdateData, db: AsyncSession = Depends(
 
 @app.post("/add_offer")
 async def add_offer(
-        shop: str = Form(...),  # TODO add description, tile etc. to the Form() invocations
+        shop: str = Form(...),  # TODO add description, title etc. to the Form() invocations
         price: float = Form(...),
         name: str = Form(...),
         image: UploadFile | None = None,
@@ -294,7 +294,7 @@ async def add_offer(
         await db.refresh(offer)
         return JSONResponse(
             status_code=201,
-            content={"message": "jest git"}  # TODO decent message
+            content={"message": "An offer has been added"}
         )
     except Exception as ex:
         raise HTTPException(
