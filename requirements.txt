@@ -1,7 +1,11 @@
-fastapi~=0.112.2
-uvicorn[standard]
-pydantic~=2.8.2
-SQLAlchemy~=2.0.32
-databases~=0.9.0
-passlib~=1.7.4
 PyJWT~=2.9.0
+SQLAlchemy~=2.0.32
+asyncpg
+databases~=0.9.0
+fastapi~=0.112.2
+fastapi_mail
+passlib~=1.7.4
+pydantic~=2.8.2
+python-jose
+python-multipart
+uvicorn[standard]
